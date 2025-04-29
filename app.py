@@ -4,18 +4,31 @@ import openai
 import os
 import io
 import time
+import anthropic
+import google.generativeai as genai
 
 st.set_page_config(page_title="Custom Prompt Q&A Generator", layout="wide")
 
-# ─── SIDEBAR ───────────────────────────────────────────────────────────────
-st.sidebar.header("🔑 API Configuration")
+st.sidebar.header("🤖 Model & API Configuration")
+model_options = {
+    "GPT-4o (OpenAI)": {"provider": "openai", "model": "gpt-4o"},
+    "GPT-3.5 Turbo (OpenAI)": {"provider": "openai", "model": "gpt-3.5-turbo"},
+    "Claude 3 Opus (Anthropic)": {"provider": "anthropic", "model": "claude-3-opus-20240229"},
+    "Gemini Pro (Google)": {"provider": "google", "model": "gemini-pro"},
+}
+
+model_label = st.sidebar.selectbox("Choose a model", list(model_options.keys()))
+selected_model_info = model_options[model_label]
+provider = selected_model_info["provider"]
+selected_model = selected_model_info["model"]
+
+# Dynamic API Key input based on provider
 api_key = st.sidebar.text_input(
-    "OpenAI API Key",
+    f"{provider.capitalize()} API Key",
     type="password",
-    help="Enter your OpenAI API key (sk-...)."
+    help=f"Enter your API key for {provider.capitalize()}",
 )
-if api_key:
-    openai.api_key = api_key
+
 
 st.sidebar.header("✍️ Prompt Template")
 default_template = """
@@ -51,26 +64,72 @@ uploaded_file = st.sidebar.file_uploader(
 )
 
 # ─── FUNCTION ─────────────────────────────────────────────────────────────
-def reddit_response(ques: str ,ans:str, template: str) -> str:
-    prompt = template.replace("{question}", ques)
-    prompt = template.replace("{answer}", ans)
-    print(prompt)
+# def reddit_response(ques: str ,ans:str, template: str, model_choice: str) -> str:
+#     prompt = template.replace("{question}", ques)
+#     prompt = template.replace("{answer}", ans)
+#     print(prompt)
+#     try:
+#         resp = openai.chat.completions.create(
+#             model=model_choice,
+#             messages=[{"role": "user", "content": prompt}],
+#             max_tokens=1024,
+#         )
+#         return resp.choices[0].message.content
+#     except Exception as e:
+#         st.error(f"Generation error: {e}")
+#         return "Question: \nAnswer:"
+
+def reddit_response(ques: str, ans: str, template: str, provider: str, model: str, api_key: str) -> str:
+    prompt = template.replace("{question}", ques).replace("{answer}", ans)
+
     try:
-        resp = openai.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1024,
-        )
-        return resp.choices[0].message.content
+        if provider == "openai":
+
+            openai.api_key = api_key
+            resp = openai.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=1024,
+            )
+            return resp.choices[0].message.content
+
+        elif provider == "anthropic":
+
+            client = anthropic.Anthropic(api_key=api_key)
+            resp = client.messages.create(
+                model=model,
+                max_tokens=1024,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return resp.content[0].text
+
+        elif provider == "google":
+
+            genai.configure(api_key=api_key)
+            model_obj = genai.GenerativeModel(model)
+            response = model_obj.generate_content(prompt)
+            return response.text
+
+        else:
+            return "Unsupported provider."
+
     except Exception as e:
         st.error(f"Generation error: {e}")
         return "Question: \nAnswer:"
 
+
 # ─── MAIN ─────────────────────────────────────────────────────────────────
 if uploaded_file and api_key:
     st.header("🚀 Ready to Generate")
-    df = pd.read_excel(uploaded_file, sheet_name="Sheet1")
-    st.write("### Preview of your data", df.head())
+    xlsx = pd.ExcelFile(uploaded_file)
+    sheet_names = xlsx.sheet_names
+    selected_sheet = st.selectbox("Select a sheet to process", sheet_names)
+
+    df = pd.read_excel(xlsx, sheet_name=selected_sheet)
+    st.write(f"### Preview of your data from `{selected_sheet}`", df.head())
+
+    # df = pd.read_excel(uploaded_file, sheet_name="Sheet1")
+    # st.write("### Preview of your data", df.head())
 
     if st.button("▶️ Generate Q&A for each row"):
         start_time = time.time()
@@ -82,7 +141,7 @@ if uploaded_file and api_key:
 
             ques = row.get("Questions", "")
             ans = row.get("Answers","")
-            resp = reddit_response(ques,ans, prompt_template)
+            resp = reddit_response(ques, ans, prompt_template, provider, selected_model, api_key)
 
             parts = resp.split("Answer:")
             q = parts[0].replace("Question:", "").strip()
