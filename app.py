@@ -11,9 +11,7 @@ st.set_page_config(page_title="Custom Prompt Q&A Generator", layout="wide")
 st.sidebar.header("🤖 Model & API Configuration")
 model_options = {
     "GPT-4o (OpenAI)": {"provider": "openai", "model": "gpt-4o"},
-    "GPT-3.5 Turbo (OpenAI)": {"provider": "openai", "model": "gpt-3.5-turbo"},
-    "Claude 3 Opus (Anthropic)": {"provider": "anthropic", "model": "claude-3-opus-20240229"},
-    "Gemini Pro (Google)": {"provider": "google", "model": "gemini-pro"},
+    "GPT-3.5 Turbo (OpenAI)": {"provider": "openai", "model": "gpt-3.5-turbo"}
 }
 
 model_label = st.sidebar.selectbox("Choose a model", list(model_options.keys()))
