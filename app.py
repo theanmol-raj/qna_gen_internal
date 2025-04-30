@@ -8,7 +8,13 @@ import time
 
 st.set_page_config(page_title="Custom Prompt Q&A Generator", layout="wide")
 
+# ─── SIDEBAR ───────────────────────────────────────────────────────────────
+
+
+
 st.sidebar.header("🤖 Model & API Configuration")
+
+# Define model options with provider info
 model_options = {
     "GPT-4o (OpenAI)": {"provider": "openai", "model": "gpt-4o"},
     "GPT-3.5 Turbo (OpenAI)": {"provider": "openai", "model": "gpt-3.5-turbo"}
@@ -61,20 +67,7 @@ uploaded_file = st.sidebar.file_uploader(
 )
 
 # ─── FUNCTION ─────────────────────────────────────────────────────────────
-# def reddit_response(ques: str ,ans:str, template: str, model_choice: str) -> str:
-#     prompt = template.replace("{question}", ques)
-#     prompt = template.replace("{answer}", ans)
-#     print(prompt)
-#     try:
-#         resp = openai.chat.completions.create(
-#             model=model_choice,
-#             messages=[{"role": "user", "content": prompt}],
-#             max_tokens=1024,
-#         )
-#         return resp.choices[0].message.content
-#     except Exception as e:
-#         st.error(f"Generation error: {e}")
-#         return "Question: \nAnswer:"
+
 
 def reddit_response(ques: str, ans: str, template: str, provider: str, model: str, api_key: str) -> str:
     prompt = template.replace("{question}", ques).replace("{answer}", ans)
@@ -90,22 +83,6 @@ def reddit_response(ques: str, ans: str, template: str, provider: str, model: st
             )
             return resp.choices[0].message.content
 
-        elif provider == "anthropic":
-
-            client = anthropic.Anthropic(api_key=api_key)
-            resp = client.messages.create(
-                model=model,
-                max_tokens=1024,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return resp.content[0].text
-
-        elif provider == "google":
-
-            genai.configure(api_key=api_key)
-            model_obj = genai.GenerativeModel(model)
-            response = model_obj.generate_content(prompt)
-            return response.text
 
         else:
             return "Unsupported provider."
@@ -125,32 +102,39 @@ if uploaded_file and api_key:
     df = pd.read_excel(xlsx, sheet_name=selected_sheet)
     st.write(f"### Preview of your data from `{selected_sheet}`", df.head())
 
-    # df = pd.read_excel(uploaded_file, sheet_name="Sheet1")
-    # st.write("### Preview of your data", df.head())
-
     if st.button("▶️ Generate Q&A for each row"):
         start_time = time.time()
         questions, answers = [], []
         progress = st.progress(0)
+        status_text = st.empty()  # Placeholder to show current row progress
         total = len(df)
 
         for i, row in df.iterrows():
+            status_text.markdown(f"**Processing row {i + 1} of {total}...**")
 
-            ques = row.get("Questions", "")
-            ans = row.get("Answers","")
-            resp = reddit_response(ques, ans, prompt_template, provider, selected_model, api_key)
+            try:
+                ques = row.get("Questions", "")
+                ans = row.get("Answers", "")
+                resp = reddit_response(ques, ans, prompt_template, provider, selected_model, api_key)
 
-            parts = resp.split("Answer:")
-            q = parts[0].replace("Question:", "").strip()
-            a = parts[1].strip() if len(parts) > 1 else ""
-            questions.append(q)
-            answers.append(a)
+                parts = resp.split("Answer:")
+                q = parts[0].replace("Question:", "").strip()
+                a = parts[1].strip() if len(parts) > 1 else ""
+                questions.append(q)
+                answers.append(a)
+
+            except Exception as e:
+                st.error(f"Error at row {i + 1}: {e}")
+                questions.append("")
+                answers.append("")
+
             progress.progress((i + 1) / total)
 
         df["Generated questions"] = questions
         df["Generated answers"] = answers
 
         st.success(f"Done in {time.time() - start_time:.2f}s")
+        status_text.markdown("**✅ All rows processed**")
         st.write("### Results", df)
 
         towrite = io.BytesIO()
@@ -164,6 +148,6 @@ if uploaded_file and api_key:
         )
 
 elif not api_key:
-    st.warning("Please enter your API key in the sidebar.")
+    st.warning("Please enter your OpenAI API key in the sidebar.")
 else:
     st.info("Upload an Excel file to get started.")
