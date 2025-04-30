@@ -4,8 +4,7 @@ import openai
 import os
 import io
 import time
-import anthropic
-import google.generativeai as genai
+
 
 st.set_page_config(page_title="Custom Prompt Q&A Generator", layout="wide")
 
