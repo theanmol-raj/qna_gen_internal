@@ -113,8 +113,8 @@ if uploaded_file and api_key:
             status_text.markdown(f"**Processing row {i + 1} of {total}...**")
 
             try:
-                ques = row.get("Questions", "")
-                ans = row.get("Answers", "")
+                ques = str(row.get("Questions", ""))
+                ans = str(row.get("Answers", ""))
                 resp = reddit_response(ques, ans, prompt_template, provider, selected_model, api_key)
 
                 parts = resp.split("Answer:")
