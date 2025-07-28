@@ -93,8 +93,7 @@ def reddit_response(ques: str, ans: str, template: str, provider: str, model: st
             return resp.choices[0].message.content
 
         elif provider == "anthropic":
-            model_id = model,
-            
+            model_id = model
             body = {
                 "anthropic_version": "bedrock-2023-05-31",
                 "messages": [
