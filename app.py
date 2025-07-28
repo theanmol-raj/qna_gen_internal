@@ -97,7 +97,6 @@ def reddit_response(ques: str, ans: str, template: str, provider: str, model: st
             
             body = {
                 "anthropic_version": "bedrock-2023-05-31",
-
                 "messages": [
                     {"role": "user", "content": prompt}
                 ],
@@ -108,7 +107,6 @@ def reddit_response(ques: str, ans: str, template: str, provider: str, model: st
             
             response = bedrock.invoke_model(
                 modelId=model_id,
-                inferenceId="arn:aws:bedrock:us-east-1:649538629005:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0",
                 body=json.dumps(body),
                 contentType="application/json",
                 accept="application/json",
