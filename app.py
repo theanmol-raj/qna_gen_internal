@@ -13,7 +13,9 @@ st.set_page_config(page_title="Custom Prompt Q&A Generator", layout="wide")
 
 # ─── SIDEBAR ───────────────────────────────────────────────────────────────
 
-
+AWS_ACCESS_KEY_ID = st.secrets["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = st.secrets["AWS_SECRET_ACCESS_KEY"]
+AWS_REGION = st.secrets["AWS_REGION"]
 
 st.sidebar.header("🤖 Model & API Configuration")
 
@@ -24,7 +26,9 @@ model_options = {
     "Claude Sonnet 3.7" : {"provider" : "anthropic" , "model": "anthropic.claude-3-7-sonnet-20250219-v1:0"},
     "Claude Sonnet 3.5" : {"provider" : "anthropic" , "model": "anthropic.claude-3-5-sonnet-20241022-v2:0"}
 }
-bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
+bedrock = boto3.client("bedrock-runtime", region_name=st.secrets["AWS_REGION"],
+    aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
+    aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"])
 
 model_label = st.sidebar.selectbox("Choose a model", list(model_options.keys()))
 selected_model_info = model_options[model_label]
