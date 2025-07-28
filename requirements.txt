@@ -4,3 +4,4 @@ openai
 openpyxl
 google-generativeai
 anthropic
+boto3

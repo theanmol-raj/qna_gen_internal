@@ -5,6 +5,8 @@ import os
 import io
 import time
 import anthropic
+import boto3
+import json
 
 
 st.set_page_config(page_title="Custom Prompt Q&A Generator", layout="wide")
@@ -19,10 +21,10 @@ st.sidebar.header("🤖 Model & API Configuration")
 model_options = {
     "GPT-4o (OpenAI)": {"provider": "openai", "model": "gpt-4o"},
     "GPT-3.5 Turbo (OpenAI)": {"provider": "openai", "model": "gpt-3.5-turbo"},
-    "Claude Sonnet 4" : {"provider" : "anthropic" , "model": "claude-sonnet-4-20250514"},
-    "Claude Sonnet 3.7" : {"provider" : "anthropic" , "model": "claude-3-7-sonnet-20250219"},
-    "Claude Sonnet 3.5" : {"provider" : "anthropic" , "model": "claude-3-5-sonnet-20241022"}
+    "Claude Sonnet 3.7" : {"provider" : "anthropic" , "model": "anthropic.claude-3-7-sonnet-20250219-v1:0"},
+    "Claude Sonnet 3.5" : {"provider" : "anthropic" , "model": "anthropic.claude-3-5-sonnet-20241022-v2:0"}
 }
+bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
 
 model_label = st.sidebar.selectbox("Choose a model", list(model_options.keys()))
 selected_model_info = model_options[model_label]
@@ -88,17 +90,22 @@ def reddit_response(ques: str, ans: str, template: str, provider: str, model: st
             return resp.choices[0].message.content
 
         elif provider == "anthropic":
-            client = anthropic.Anthropic(
-            api_key=api_key,
+            model_id = model
+            body = {
+                "anthropic_version": "bedrock-2023-05-31",
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": 1024,
+            }
+            response = bedrock.invoke_model(
+                modelId=model_id,
+                body=json.dumps(body),
+                contentType="application/json",
+                accept="application/json"
             )
-            message = client.messages.create(
-            model=model,
-            max_tokens=1024,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-            )
-            return message.content
+            response_body = json.loads(response['body'].read())
+            return response_body['content'][0]['text']
 
         else:
             return "Unsupported provider."
