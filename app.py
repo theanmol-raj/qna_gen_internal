@@ -106,7 +106,7 @@ def reddit_response(ques: str, ans: str, template: str, provider: str, model: st
                 modelId=model_id,
                 body=json.dumps(body),
                 contentType="application/json",
-                accept="application/json"
+                accept="application/json",
                 
                 inferenceConfig={
         "inferenceProfileArn": "arn:aws:bedrock:us-east-1:649538629005:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0"
