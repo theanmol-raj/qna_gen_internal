@@ -4,6 +4,7 @@ import openai
 import os
 import io
 import time
+import anthropic
 
 
 st.set_page_config(page_title="Custom Prompt Q&A Generator", layout="wide")
@@ -17,7 +18,10 @@ st.sidebar.header("🤖 Model & API Configuration")
 # Define model options with provider info
 model_options = {
     "GPT-4o (OpenAI)": {"provider": "openai", "model": "gpt-4o"},
-    "GPT-3.5 Turbo (OpenAI)": {"provider": "openai", "model": "gpt-3.5-turbo"}
+    "GPT-3.5 Turbo (OpenAI)": {"provider": "openai", "model": "gpt-3.5-turbo"},
+    "Claude Sonnet 4" : {"provider" : "anthropic" , "model": "claude-sonnet-4-20250514"},
+    "Claude Sonnet 3.7" : {"provider" : "anthropic" , "model": "claude-3-7-sonnet-20250219"},
+    "Claude Sonnet 3.5" : {"provider" : "anthropic" , "model": "claude-3-5-sonnet-20241022"}
 }
 
 model_label = st.sidebar.selectbox("Choose a model", list(model_options.keys()))
@@ -83,6 +87,18 @@ def reddit_response(ques: str, ans: str, template: str, provider: str, model: st
             )
             return resp.choices[0].message.content
 
+        elif provider == "anthropic":
+            client = anthropic.Anthropic(
+            api_key=api_key,
+            )
+            message = client.messages.create(
+            model=model,
+            max_tokens=1024,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+            )
+            return message.content
 
         else:
             return "Unsupported provider."
