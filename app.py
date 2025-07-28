@@ -164,6 +164,6 @@ if uploaded_file and api_key:
         )
 
 elif not api_key:
-    st.warning("Please enter your OpenAI API key in the sidebar.")
+    st.warning(f"Please enter your {provider} API key in the sidebar.")
 else:
     st.info("Upload an Excel file to get started.")
