@@ -24,7 +24,6 @@ model_options = {
     "GPT-4o (OpenAI)": {"provider": "openai", "model": "gpt-4o"},
     "GPT-3.5 Turbo (OpenAI)": {"provider": "openai", "model": "gpt-3.5-turbo"},
     "Claude Sonnet 3.7" : {"provider" : "anthropic" , "model": "anthropic.claude-3-7-sonnet-20250219-v1:0"},
-    "Claude Sonnet 3.5" : {"provider" : "anthropic" , "model": "anthropic.claude-3-5-sonnet-20241022-v2:0"}
 }
 bedrock = boto3.client("bedrock-runtime", region_name=st.secrets["AWS_REGION"],
     aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
@@ -101,12 +100,17 @@ def reddit_response(ques: str, ans: str, template: str, provider: str, model: st
                     {"role": "user", "content": prompt}
                 ],
                 "max_tokens": 1024,
+                
             }
             response = bedrock.invoke_model(
                 modelId=model_id,
                 body=json.dumps(body),
                 contentType="application/json",
                 accept="application/json"
+                
+                inferenceConfig={
+        "inferenceProfileArn": "arn:aws:bedrock:us-east-1:649538629005:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+    }
             )
             response_body = json.loads(response['body'].read())
             return response_body['content'][0]['text']
