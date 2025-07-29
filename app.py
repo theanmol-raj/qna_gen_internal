@@ -15,7 +15,7 @@ st.set_page_config(page_title="Custom Prompt Q&A Generator", layout="wide")
 
 AWS_ACCESS_KEY_ID = st.secrets["AWS_ACCESS_KEY_ID"]
 AWS_SECRET_ACCESS_KEY = st.secrets["AWS_SECRET_ACCESS_KEY"]
-AWS_REGION = st.secrets["AWS_REGION"]
+AWS_REGION = st.secrets["AWS_REGION"] 
 
 st.sidebar.header("🤖 Model & API Configuration")
 
@@ -44,7 +44,7 @@ api_key = st.sidebar.text_input(
 
 st.sidebar.header("✍️ Prompt Template")
 default_template = """
-From the provided text "Question : {question} Answer:{answer}" generate a question and answer to that question
+From the provided text "Question : <ques> Answer:<ans>" generate a question and answer to that question
 
 <rules>
 - Strictly ensure that 100% of the text "question" "answer" given is utilised in formation of response
@@ -64,7 +64,7 @@ Question:
 Answer:
 """
 prompt_template = st.sidebar.text_area(
-    "Edit your prompt below (use Question placeholder :{question}): Answer placeholder :{answer} ",
+    "Edit your prompt below (use Question placeholder :<ques>): Answer placeholder :<ans> ",
     value=default_template,
     height=300
 )
@@ -79,7 +79,7 @@ uploaded_file = st.sidebar.file_uploader(
 
 
 def reddit_response(ques: str, ans: str, template: str, provider: str, model: str, api_key: str) -> str:
-    prompt = template.replace("{question}", ques).replace("{answer}", ans)
+    prompt = template.replace("<ques>", ques).replace("<ans>", ans)
 
     try:
         if provider == "openai":
